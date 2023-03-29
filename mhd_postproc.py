@@ -34,7 +34,10 @@ def post_proc_disk(soln,gen,norm=False):
     
     for i in np.arange(N):
         #recalculate array values
+        gen.Te_model='float' #reset to float here so that the code recalculates
+                             #the Te value as a self consistency check       
         gen.alg(r[i],[vr[i],vth[i],p[i]])
+        gen.Te_model='fixed'
         #fill arrays
         T_arr[i] = gen.T
         Te_arr[i] = gen.Te
@@ -168,10 +171,12 @@ def post_proc_lin(soln,gen,norm=False):
     
     for i in np.arange(N):
         #recalculate array values
+        gen.Te_model='float' #reset to float here so that the code recalculates
+                             #the Te value as a self consistency check
         gen.alg(x[i],[vx[i],p[i]])
+        gen.Te_model='fixed'
         #fill arrays
         T_arr[i] = gen.T
-        Te_arr[i] = gen.Te
         n_arr[i] = gen.n
         ns_arr[i] = gen.ns
         ne_arr[i] = gen.ne
@@ -187,6 +192,7 @@ def post_proc_lin(soln,gen,norm=False):
         #derived quantities
         M_arr[i] = gen.M0*vx[i]*np.sqrt(gen.n/p[i])
 
+        
     f = 1 - T_arr[-1] * (3 + M_arr[-1]**2)/(3 + M_arr[0]**2)
     f *= 100.
   
@@ -277,8 +283,9 @@ def post_proc_lin(soln,gen,norm=False):
 def disk_plots(disk):
     f,axs = plt.subplots(nrows=2,ncols=4)
     
-    axs[0,0].plot(disk['r'],disk['vr'])
-    axs[0,1].plot(disk['r'],disk['vth'])
+    axs[0,0].plot(disk['r'],disk['vr'],label='vr')
+    axs[0,0].plot(disk['r'],disk['vth'],label='vth')
+    axs[0,1].plot(disk['r'],disk['S'])
     axs[0,2].plot(disk['r'],disk['p'])
     axs[0,3].plot(disk['r'],disk['Jr'],label='Jr')
     axs[0,3].plot(disk['r'],disk['Jth'],label='Jth')
@@ -290,12 +297,13 @@ def disk_plots(disk):
     axs[1,2].plot(disk['r'],disk['ne']/disk['ne'][0],label='ne')
     axs[1,3].plot(disk['r'],disk['beta'])
 
+    axs[0,0].legend()
     axs[0,3].legend()
     axs[1,1].legend()
     axs[1,2].legend()
     
-    axs[0,0].set_title('vr')
-    axs[0,1].set_title('vth')
+    axs[0,0].set_title('vr /& vth')
+    axs[0,1].set_title('s')
     axs[0,2].set_title('p')
     axs[0,3].set_title('J')
     axs[1,0].set_title('M')

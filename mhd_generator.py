@@ -307,6 +307,8 @@ class MHD_gen():
 
         #B-field shape factor
         self.xi = self._xi(r)
+        if (self.Te_model == 'fixed'):
+            self.dxi = self._dxi(r)
         
         #neutral species density relations
         self.n = 1/(self.s*vr)
@@ -319,7 +321,8 @@ class MHD_gen():
         elif (self.Te_model == 'float'):
             [tmp,info,ier,msg] = fsolve(self._Te_fun,self.Te_last, \
                                             args = (r,vr,p), full_output=True)
-            self.Te = tmp[0]            
+            self.Te = tmp[0]
+            self.Te_last = self.Te
         self.ne = self._ne(self.Te)
         self.beta = self._beta(r,self.Te,self.ne)
 
@@ -343,8 +346,6 @@ class MHD_gen():
         self.T = p/self.n
         if((self.gas=='methane')or(self.gas=='coal')): #delta -> inf
             self.Te = self.T
-        elif(self.Te_fixed):
-            self.Te_step = 1.
         else:
             [self.Te,info,ier,msg] = fsolve(self._Te_fun,self.Te_last, \
                                             args = (x,vx,p), fulloutput=True)
@@ -412,12 +413,12 @@ class MHD_gen():
              + (1-s/(3*C_T*vr)*(p+F-D_T*G+H))/(vr-p*s/self.M0r**2) \
              * (-(5/3)*p*(vth**2/(vr*r) - s*self.Jth*self.xi) \
                 + 2*C_T*self.xi/(self.ne*self.beta)*(self.Jr**2 + self.Jth**2))
-        dsdr /= p+F+G(1-D_T) - (5/3)*p*vr*(1 + s/(3*C_T*vr)*(p+F-D_T*G+H))/(vr-p*s/self.M0r**2)
+        dsdr /= p+F+G*(1-D_T) - (5/3)*p*vr*(1 + s/(3*C_T*vr)*(p+F-D_T*G+H))/(vr-p*s/self.M0r**2)
         dsdr *= -s
         #pressure & velocity eqns.
         self.s = s
         self.ds = dsdr
-        [dvrdr,dvthdr,dpdr] = _ode_cyl(self,r,vr,vth,p)
+        [dvrdr,dvthdr,dpdr] = self._ode_cyl(r,vr,vth,p)
 
         #return rhs
         rhs = [dvrdr,dvthdr,dpdr,dsdr]
@@ -641,7 +642,9 @@ class MHD_gen():
             tmp = 1.
         return tmp
 
-    
-    # Ionization Instability Calculation
-    # ----------------------------------------------------------------
-        
+    def _dxi(self,r):
+        if (self.coil == 'helm'):
+            tmp = -3*(self.lamb0/self.R0)**2*r*self._xi(r)/(1.+(self.lamb0*r/self.R0)**2)**(1/2)
+        else:
+            tmp = 0.
+        return tmp
