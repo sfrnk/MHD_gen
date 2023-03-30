@@ -23,7 +23,7 @@ genr = MHD_gen()
 
 #T Murakami et al. IEEE 2004 Generator Parameters
 genr.gen_type = 'cyl'
-genr.Te_model = 'float'
+genr.Te_model = 'fixed'
 genr.gas = 'He'
 genr.seed = 'Cs'
 genr.coil = 'helm'
@@ -36,7 +36,7 @@ genr.Tstag = 2250.   #[K]   Stagnation temperature at channel inlet
 genr.r0 = 0.1        #[m]   Radius at channel inlet
 genr.kw = 0.02       #      Channel shape factor
 genr.w0 = 0.01       #[m]   Channel height at inlet
-genr.J0 = 0.885    #      Normalized inlet current
+genr.J0 = 0.88       #      Normalized inlet current
 genr.fseed =2.0e-4   #      Seed fraction
 genr.chi0 = np.pi/4. #[rad] Swirl angle
 

@@ -405,7 +405,7 @@ class MHD_gen():
         C_T = 5/9 * self.M0r**2
         D_T = 1 - self.n * A_T / (2* np.sqrt(1+self.n*A_T)*(1+np.sqrt(1+self.n*A_T)))
         E_T = D_T * (1-1/(2*self.logLamb))
-        F = 2*C_T*self.Jth**2/self.ne**2 * (self.nu_en + self.nu_es0*(self.n - (self.ns0/self.ne0)*D_T*self.ne)+E_T*self.nu_ei)/self.nu_t 
+        F = 2*C_T*self.Jth**2/self.ne**2 * (self.nu_en + E_T*self.nu_ei)/self.nu_t #dropped nu_es term for simplicity
         G = 2*C_T*self.beta**2 * self.Jr/self.ne * (vr - self.Jr/self.ne * ( 1- 1/self.beta**2))
         H = 2*C_T*self.beta**2 * (vr-self.Jr/self.ne)
         #x-section rhs
@@ -545,7 +545,7 @@ class MHD_gen():
         vte0 = np.sqrt(2*kB*Te/e_mass)
         vtj0 = np.sqrt(2*kB*self.T0/self.mseed)
         self.nu_en0 = self.n0 * self.sigen * np.sqrt(vte0**2)
-        self.nu_es0 = (self.ns0-ne) * self.sigej * np.sqrt(vte0**2)
+        #self.nu_es0 = (self.ns0-ne) * self.sigej * np.sqrt(vte0**2)
         lambdad = 69.01 * np.sqrt(Te/ne)
         self.Lambda0 = 4*np.pi*ne*lambdad**3
         self.nu_ei0 = 3.633e-6 * ne * Te**(-3/2) * np.log(self.Lambda0) 
@@ -598,12 +598,13 @@ class MHD_gen():
     def _beta(self,r,Te,ne):
         #update collision freqs
         self.nu_en = self.nu_en0 * self.n * np.sqrt(Te)
-        self.nu_es = self.nu_es0 * (self.ns - self.ne0*ne/self.ns0) * np.sqrt(Te)        
+        #self.nu_es = self.nu_es0 * (self.ns - self.ne0*ne/self.ns0) * np.sqrt(Te)        
         self.logLamb = np.log(self.Lambda0 * (Te)**(3/2)/np.sqrt(ne))
         self.nu_ei = self.nu_ei0 * ne / Te**(3/2)\
               * self.logLamb/np.log(self.Lambda0)
-        self.nu_t = self.nu_en + self.nu_es + self.nu_ei
-
+        #self.nu_t = self.nu_en + self.nu_es + self.nu_ei SF ignore seed for now
+        self.nu_t = self.nu_en + self.nu_ei
+        
         return 1.7588e11 * self.B0*self.xi/self.nu_t
         
     # Ohm's Law Funcs.
