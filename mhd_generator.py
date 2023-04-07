@@ -385,7 +385,15 @@ class MHD_gen():
         #put everything in solution vector
         rhs = [dvrdr, dvthdr, dpdr]
         return rhs
+    
+    # MHD_gen._ode_cyl_fixTe_jpf
+    
+    # Jeff's formulation of the fixed Te solution. This is a bit more
+    # complicated to solve, but might allow us to find shock free
+    # solutions to the MHD equations that pass through M=1
+    
 
+    
     # MHD_gen._ode_cyl_fixTe(r,vr,vth,p,s)
     # inputs:
     # > r - normalized position 
@@ -400,21 +408,24 @@ class MHD_gen():
     # s. See note for derivation
     # ----------------------------------------------------------------
     def _ode_cyl_fixTe(self,r,vr,vth,p,s):
-        #consts needed for x-section rhs
-        A_T = 4 / self.N
-        C_T = 5/9 * self.M0r**2
-        D_T = 1 - self.n * A_T / (2* np.sqrt(1+self.n*A_T)*(1+np.sqrt(1+self.n*A_T)))
-        E_T = D_T * (1-1/(2*self.logLamb))
-        F = 2*C_T*self.Jth**2/self.ne**2 * (self.nu_en + E_T*self.nu_ei)/self.nu_t #dropped nu_es term for simplicity
-        G = 2*C_T*self.beta**2 * self.Jr/self.ne * (vr - self.Jr/self.ne * ( 1- 1/self.beta**2))
-        H = 2*C_T*self.beta**2 * (vr-self.Jr/self.ne)
-        #x-section rhs
-        dsdr = C_T*self.Jth**2/self.ne**2*self.dxi/self.xi \
-             + (1-s/(3*C_T*vr)*(p+F-D_T*G+H))/(vr-p*s/self.M0r**2) \
-             * (-(5/3)*p*(vth**2/(vr*r) - s*self.Jth*self.xi) \
-                + 2*C_T*self.xi/(self.ne*self.beta)*(self.Jr**2 + self.Jth**2))
-        dsdr /= p+F+G*(1-D_T) - (5/3)*p*vr*(1 + s/(3*C_T*vr)*(p+F-D_T*G+H))/(vr-p*s/self.M0r**2)
-        dsdr *= -s
+        # various shorthand vars
+        A_T = 4/self.N
+        C_T = 5/9*self.M0r**2
+        D_T = 1 - self.n * A_T / (2*np.sqrt(1+self.n * A_T)*(1+np.sqrt(1+self.n*A_T)))
+        E_T = self.nu_en + D_T*(1-1/(2*self.logLambda))
+        # x-section rhs (prepare for a very long eqn.)
+        top = s*(self.M0r**2*self.ne**2*self.xi*(r*self.xi*(self.Jr**2+self.Jth**2)*(3*p*s0-5*self.M0r**2*vr)\
+                                                +3*self.ne*p*self.beta*(vth**2-self.Jth*r*s*vr*self.xi))\
+                 +3*C_T*self.n*(3*self.Jth**2*self.ne*r*vr*self.beta*self.dxidr*(p*s-self.M0r**2*vr)+self.M0r**2*self.xi
+                                *(E_T*self.Jth**2+self.ne*vr*self.beta**2*(self.ne*vr-self.Jr)\
+                                  +D_T*self.Jr*(self.Jr*(self.beta**2-1)-self.ne*vr*self.beta**2))
+                                *(2*r*s*self.xi*(self.Jr**2+self.Jth**2)-3*self.ne*self.beta*(vth**2-self.Jth*r*s*vr*self.xi))))
+                                            
+        bot = 3*self.ne*r*vr*self.beta*self.xi*(-self.M0r**2*self.ne**2*p*vr
+                                                +3*C_T*self.n*(self.Jr*self.ne*vr*self.beta**2*((1-D_T)*self.M0r**2*vr-2*p*s)
+                                                               +self.Jr**2*(self.beta**2-1)*(p*s+(D_T-1)*self.M0r**2*vr)
+                                                               +vr*(E_T*self.Jth**2*self.M0r**2+self.ne**2*p*s*vr*self.beta**2)))
+        dsdr = -top/bot
         #pressure & velocity eqns.
         self.s = s
         self.ds = dsdr
@@ -423,7 +434,7 @@ class MHD_gen():
         #return rhs
         rhs = [dvrdr,dvthdr,dpdr,dsdr]
         return rhs
-
+    
     # MHD_gen._ode_lin(x,vx,p)
     # inputs:
     # > x - normalized position 
